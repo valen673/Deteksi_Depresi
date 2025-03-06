@@ -52,7 +52,7 @@ st.title("Aplikasi Deteksi Depresi")
 
 st.markdown(
     """
-    <div style="border: 2px solid #007BFF; padding: 15px; border-radius: 10px; background-color: #f0f8ff; text-align: justify; color: #007BFF;">
+    <div style="border: 2px solid #000000; padding: 15px; border-radius: 10px; background-color: #000000; text-align: justify; color: #ffffff;">
     <strong>Silahkan baca cerita berikut untuk mendapatkan hasil prediksi depresi:</strong><br><br>
     Angin utara dan matahari berdebat tentang siapa di antara mereka yang lebih kuat, ketika tiba-tiba muncul seorang pengembara yang mengenakan mantel tebal. Mereka pun sepakat bahwa di antara mereka, siapa pun yang pertama kali berhasil membuat pengembara melepas mantelnya akan dianggap sebagai yang terkuat.<br><br>
     Angin utara mulai bertiup sekuat tenaga, tetapi semakin kencang ia bertiup, semakin erat pengembara membungkus dirinya dengan mantelnya. Akhirnya, angin utara memutuskan untuk menyerah.<br><br>
@@ -121,7 +121,7 @@ if st.session_state.get("show_questionnaire", False):
 if st.session_state.get("show_report", False):
     st.markdown(
         f"""
-        <div style="border: 2px solid #007BFF; padding: 15px; border-radius: 10px; background-color: #f0f8ff; text-align: justify; color: #007BFF;">
+        <div style="border: 2px solid #000000; padding: 15px; border-radius: 10px; background-color: #000000; text-align: justify; color: #ffffff;">
         <strong>Laporan Skrining Depresi</strong><br><br>
         - **Hasil Prediksi Audio**: {st.session_state.prediction_result} ({st.session_state.confidence:.2f}% confidence)<br>
         - **Hasil Kuisioner PHQ-9**: {st.session_state.phq_result} (Skor: {st.session_state.total_score})
