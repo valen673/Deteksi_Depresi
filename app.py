@@ -10,7 +10,7 @@ def load_model():
 
 model = load_model()
 
-st.title("🎤 Voice Recorder with Transcription")
+st.title("🎤 Voice Recorder with Transcriptionn")
 
 # Merekam suara langsung
 audio_value = st.audio_input("Record a voice message")
