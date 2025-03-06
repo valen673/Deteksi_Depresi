@@ -3,6 +3,19 @@ import whisper
 import tempfile
 import os
 
+import subprocess
+
+# Coba install ffmpeg jika tidak tersedia
+try:
+    subprocess.run(["ffmpeg", "-version"], check=True)
+except FileNotFoundError:
+    print("Installing ffmpeg...")
+    subprocess.run(["pip", "install", "imageio[ffmpeg]", "ffmpeg-python"])
+
+# Tambahkan lokasi ffmpeg ke PATH (jika perlu)
+os.environ["PATH"] += os.pathsep + os.getcwd()
+
+
 # Load Whisper model (gunakan caching agar tidak reload setiap kali)
 @st.cache_resource
 def load_model():
