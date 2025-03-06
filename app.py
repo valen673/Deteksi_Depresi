@@ -1,47 +1,71 @@
 import streamlit as st
-import whisper
-import tempfile
-import os
+import json
+from openai import OpenAI
+from langchain.memory import ConversationBufferMemory
+from langchain.prompts import PromptTemplate
 
-import subprocess
+# Inisialisasi OpenAI Client
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="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",
+)
 
-# Coba install ffmpeg jika tidak tersedia
-try:
-    subprocess.run(["ffmpeg", "-version"], check=True)
-except FileNotFoundError:
-    print("Installing ffmpeg...")
-    subprocess.run(["pip", "install", "imageio[ffmpeg]", "ffmpeg-python"])
+# Inisialisasi memori percakapan
+if 'memory' not in st.session_state:
+    st.session_state.memory = ConversationBufferMemory()
 
-# Tambahkan lokasi ffmpeg ke PATH (jika perlu)
-os.environ["PATH"] += os.pathsep + os.getcwd()
+# Template Prompt untuk Skrining Depresi
+template = PromptTemplate.from_template("""
+Anda adalah chatbot psikologi yang melakukan skrining depresi.
+Gunakan pertanyaan berikut untuk memandu percakapan:
+1. Bagaimana perasaan Anda hari ini?
+2. Apakah Anda merasa sedih dalam 2 minggu terakhir?
+3. Apakah Anda mengalami gangguan tidur?
 
+Ingat percakapan sebelumnya dan sesuaikan pertanyaan Anda.
 
-# Load Whisper model (gunakan caching agar tidak reload setiap kali)
-@st.cache_resource
-def load_model():
-    return whisper.load_model("small")
+Percakapan sebelumnya:
+{history}
 
-model = load_model()
+User: {input}
+Chatbot:
+""")
 
-st.title("🎤 Voice Recorder with Transcriptionn")
+# UI Streamlit
+st.title("Chatbot Skrining Depresi")
+st.write("Halo, saya di sini untuk membantu Anda melakukan skrining depresi. Bagaimana perasaan Anda hari ini?")
 
-# Merekam suara langsung
-audio_value = st.audio_input("Record a voice message")
+# Input pengguna
+user_input = st.text_input("Anda:", "")
 
-if audio_value:
-    st.audio(audio_value, format="audio/wav")
+if st.button("Kirim") and user_input:
+    messages = st.session_state.memory.chat_memory.messages + [{"role": "user", "content": user_input}]
+    
+    completion = client.chat.completions.create(
+        extra_headers={
+            "HTTP-Referer": "https://your-site.com",
+            "X-Title": "Chatbot Skrining Depresi",
+        },
+        extra_body={},
+        model="meta-llama/llama-3.3-70b-instruct:free",
+        messages=messages
+    )
+    response = completion.choices[0].message.content
+    
+    st.session_state.memory.save_context({"input": user_input}, {"output": response})
+    
+    # Tampilkan chat history
+    st.write("**Chatbot:**", response)
 
-    # Simpan audio ke file sementara
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
-        temp_audio.write(audio_value.getvalue())
-        temp_audio_path = temp_audio.name
-
-    # Menampilkan animasi loading saat transkripsi berlangsung
-    with st.spinner("⏳ Transcribing... Please wait..."):
-        result = model.transcribe(temp_audio_path)
-
-    st.success("✅ Transcription Complete!")
-    st.text_area("📝 Transcribed Text:", result["text"])
-
-    # Hapus file sementara
-    os.remove(temp_audio_path)
+# Tombol Download Hasil Skrining
+data = {
+    "user_id": "123",
+    "responses": st.session_state.memory.buffer
+}
+json_data = json.dumps(data, indent=4)
+st.download_button(
+    label="Download Hasil Skrining",
+    data=json_data,
+    file_name="chat_history.json",
+    mime="application/json"
+)
