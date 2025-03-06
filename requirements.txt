@@ -1,3 +1,11 @@
-openai
-langchain
-
+streamlit
+streamlit-webrtc
+joblib
+opensmile
+librosa
+matplotlib
+tqdm
+numpy
+pandas
+scikit-learn
+av
