@@ -7,7 +7,7 @@ from langchain.prompts import PromptTemplate
 # Inisialisasi OpenAI Client
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="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",
 )
 
 # Inisialisasi memori percakapan
