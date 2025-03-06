@@ -42,6 +42,10 @@ if st.button("Kirim") and user_input:
     messages = st.session_state.memory.chat_memory.messages + [{"role": "user", "content": user_input}]
     
     completion = client.chat.completions.create(
+        extra_headers={
+            "HTTP-Referer": "<YOUR_SITE_URL>",  # Optional
+            "X-Title": "<YOUR_SITE_NAME>",  # Optional
+        },
         extra_body={},
         model="meta-llama/llama-3.3-70b-instruct:free",
         messages=messages
