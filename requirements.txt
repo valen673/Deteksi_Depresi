@@ -1,2 +1,3 @@
 openai-whisper
-ffmpeg
+imageio[ffmpeg]
+ffmpeg-python
