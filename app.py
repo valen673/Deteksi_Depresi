@@ -7,6 +7,8 @@ import tempfile
 import streamlit as st
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
+from streamlit_webrtc import webrtc_streamer, WebRtcMode
+import av
 
 # Load model dan parameter preprocessing
 rf_model = joblib.load("trained_rfmodel_RT95.pkl")
@@ -48,29 +50,56 @@ def predict_audio(file_path):
     except Exception as e:
         return f"Error dalam prediksi: {e}", None
 
+# Fungsi untuk menyimpan audio dari perekaman
+def audio_callback(frame):
+    return av.AudioFrame.from_ndarray(frame.to_ndarray(), layout="mono")
+
 st.title("Aplikasi Deteksi Depresi")
 
 st.markdown(
     """
     <div style="border: 2px solid #000000; padding: 15px; border-radius: 10px; background-color: #000000; text-align: justify; color: #ffffff;">
     <strong>Silahkan baca cerita berikut untuk mendapatkan hasil prediksi depresi:</strong><br><br>
-    Angin utara dan matahari berdebat tentang siapa di antara mereka yang lebih kuat, ketika tiba-tiba muncul seorang pengembara yang mengenakan mantel tebal. Mereka pun sepakat bahwa di antara mereka, siapa pun yang pertama kali berhasil membuat pengembara melepas mantelnya akan dianggap sebagai yang terkuat.<br><br>
-    Angin utara mulai bertiup sekuat tenaga, tetapi semakin kencang ia bertiup, semakin erat pengembara membungkus dirinya dengan mantelnya. Akhirnya, angin utara memutuskan untuk menyerah.<br><br>
-    Lalu, matahari mulai bersinar terang, dan pengembara segera melepaskan mantelnya. Saat itulah angin utara harus mengakui bahwa matahari adalah yang terkuat di antara mereka.
+    Angin utara dan matahari berdebat tentang siapa di antara mereka yang lebih kuat, ketika tiba-tiba muncul seorang pengembara yang mengenakan mantel tebal...
     </div>
     """,
     unsafe_allow_html=True
 )
 
+st.write("## Rekam Suara")
+webrtc_ctx = webrtc_streamer(
+    key="record",
+    mode=WebRtcMode.SENDRECV,
+    audio_receiver_size=1024,
+    media_stream_constraints={"video": False, "audio": True},
+)
+
+st.write("## Atau Unggah File Audio")
 uploaded_file = st.file_uploader("Unggah file audio (.wav) untuk analisis:", type=["wav"])
 
+# Menyimpan audio rekaman
+if webrtc_ctx.audio_receiver:
+    try:
+        audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=1)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_audio:
+            for frame in audio_frames:
+                tmp_audio.write(frame.to_ndarray().tobytes())
+            tmp_filepath = tmp_audio.name
+        st.session_state["recorded_audio_path"] = tmp_filepath
+        st.success("Rekaman suara berhasil disimpan!")
+    except Exception as e:
+        st.error(f"Error dalam merekam: {e}")
+
+# Analisis audio unggahan atau rekaman
+audio_path = st.session_state.get("recorded_audio_path") if st.session_state.get("recorded_audio_path") else None
 if uploaded_file is not None:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
         tmp_file.write(uploaded_file.read())
-        tmp_filepath = tmp_file.name
+        audio_path = tmp_file.name
 
+if audio_path:
     st.write("\n**Menganalisis audio...**")
-    prediction_result, confidence = predict_audio(tmp_filepath)
+    prediction_result, confidence = predict_audio(audio_path)
 
     if confidence is not None:
         st.session_state.prediction_result = prediction_result
@@ -79,8 +108,6 @@ if uploaded_file is not None:
 
 if st.session_state.get("show_questionnaire", False):
     st.write("## Kuisioner PHQ-9")
-    st.write("Dalam 2 minggu terakhir, seberapa sering Anda terganggu oleh masalah-masalah berikut? (Gunakan dropdown untuk memilih)")
-
     questions = [
         "Kurang berminat atau bergairah dalam melakukan apapun",
         "Merasa murung, sedih, atau putus asa",
